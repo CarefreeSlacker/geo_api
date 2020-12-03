@@ -9,18 +9,18 @@ defmodule GeoApi.Router do
   plug :match
   plug :dispatch
 
-  alias GeoDataStorage.StorageAPI
+  alias GeoApi.Router.SearchIP
 
   get "/api/search_api/:ip_address" do
-    with ip_address when is_binary(ip_address) <- conn.params["ip_address"],
-         {:ok, geo_data} <- StorageAPI.get_location_by_ip(ip_address),
-         {:ok, response} <- Poison.encode(Map.from_struct(geo_data)) do
+    with {:ok, response} <- SearchIP.perform(conn.params["ip_address"]) do
       send_resp(conn, 200, response)
     else
       nil ->
         send_resp(conn, 402, "Please provide IP address")
       {:error, reason} when is_binary(reason) ->
         send_resp(conn, 402, "Error fetching geo data: #{reason}")
+      {:error, :not_found} ->
+        send_resp(conn, 404, "Network with given IP not found")
       {:error, reason} ->
         send_resp(conn, 500, "Unexpected error: #{inspect(reason)}")
     end

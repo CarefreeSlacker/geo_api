@@ -6,7 +6,7 @@ defmodule GeoApi.MixProject do
       app: :geo_api,
       version: "0.1.0",
       elixir: "~> 1.9",
-#      start_permanent: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
   end
