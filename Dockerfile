@@ -1,9 +1,8 @@
-FROM elixir:latest
+FROM elixir:latest as build
 COPY . .
 
 ENV MIX_ENV=production
 ENV API_PORT=4000
-ENV APP_NAME=geo_api
 
 RUN rm -Rf _build
 RUN mix local.hex --force
@@ -11,23 +10,22 @@ RUN mix local.rebar --force
 RUN mix deps.get
 RUN mix compile
 
-RUN mix relese
+RUN mix release
 
-RUN RELEASE_DIR=`ls -d _build/prod/rel/$APP_NAME/releases/*/` && \
-        mkdir /export && \
-        tar -xf "$RELEASE_DIR/$APP_NAME.tar.gz" -C /export
+RUN mkdir export_release
+RUN cp -r ./_build/production/rel/geo_api/*/ ./export_release/
 
-FROM alpine-elixir
+FROM elixir:latest
 RUN mkdir /opt/app
 
 ENV DATABASE_NAME=geo_data_database
 ENV DATABASE_USER=postgres
 ENV DATABASE_PASSWORD=postgres
-ENV DATABASE_HOST=localhost
+ENV DATABASE_HOST=127.0.0.1
 
 WORKDIR "/opt/app"
 
-COPY --from=build /export/ .
+COPY --from=build /export_release/ .
 EXPOSE 4001
 
-CMD ["/opt/app/bin/geo_api", "start"]
+ENTRYPOINT ["/opt/app/bin/geo_api", "start"]
